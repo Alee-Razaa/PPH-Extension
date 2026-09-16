@@ -430,10 +430,10 @@ So switching 10 -> 3 when the last check was 4 minutes ago fires a check in 30 s
 
 ## 5. Project structure
 
-Repo root is `E:\PPH-Extention` (GitHub: `pph-job-radar`, private). **`src/` is the folder you Load unpacked.** Nothing outside `src/` ships.
+Repo root is `E:\PPH-Extention` (GitHub: [`Alee-Razaa/PPH-Extension`](https://github.com/Alee-Razaa/PPH-Extension), private). **`src/` is the folder you Load unpacked.** Nothing outside `src/` ships.
 
 ```
-pph-job-radar/
+PPH-Extension/
 ├── CLAUDE.md                  rulebook, read every turn
 ├── README.md                  load-unpacked steps, update steps, privacy statement
 ├── package.json               private, "type": "module", zero dependencies
@@ -510,8 +510,8 @@ ui/*  background.js  content/main.js  offscreen/*
 
 ```json
 {
-  "name": "pph-job-radar",
-  "version": "0.1.0",
+  "name": "pph-extension",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "engines": { "node": ">=22" },
@@ -536,7 +536,7 @@ No `dependencies`, no `devDependencies`. Ever.
 {
   "manifest_version": 3,
   "name": "PPH Job Radar",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Alerts you the moment a new job is posted on PeoplePerHour. Local only.",
   "minimum_chrome_version": "116",
 
@@ -613,6 +613,8 @@ No `dependencies`, no `devDependencies`. Ever.
 - `tabs`: `tabs.reload`, `tabs.update`, `tabs.create` and `tabs.onRemoved` work without it, and the host permission already exposes `tab.url` for PeoplePerHour tabs. A monitor tab whose `url` is unreadable has left PeoplePerHour, which is exactly the "navigate it back" case. If a Phase 2 integration test proves otherwise, add it back and record why here.
 
 **Content script loading (R2).** `content/content.js` is the only file Chrome injects, as a classic script. It does one thing: `import(chrome.runtime.getURL('content/main.js'))`. `main.js` then statically imports `dom.js`, `core/*` and `platform/*`. Every file in that import graph must match `web_accessible_resources`, or the import fails with a network error in the page console.
+
+Verified working on Chrome 153.0.8010.47 (Phase 0, 2026-09-17).
 
 `use_dynamic_url: true` stops the site probing for the extension by a fixed URL. If the dynamic import fails with it on during Phase 0, set it to `false`, note the Chrome version here, and move on. It is a nicety for a local tool, not a requirement.
 
@@ -1695,7 +1697,7 @@ Never set `TZ` from `package.json` or the shell. It is not portable: `TZ=Asia/Ka
 3. Write tests first for anything in `core/`. Then the code. Small conventional commits.
 4. `npm test` and `npm run coverage` green before any Chrome testing.
 5. Run the phase's integration tests, record results in `docs/TESTLOG.md` (date, Chrome version, pass/fail, notes).
-6. Squash merge to `main`, tag `v0.N.0`, bump `manifest.json` version to match.
+6. Squash merge to `main`, tag `v0.N.0` (Phase 0 is `v0.0.1`), and set `manifest.json` and `package.json` version to match.
 7. Stop and report. Do not start the next phase unasked.
 
 ### Phase 0 - Scaffold (1 hour)

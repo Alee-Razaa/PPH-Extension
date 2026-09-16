@@ -1,0 +1,23 @@
+# dependencies (there should never be any)
+node_modules/
+
+# test output
+coverage/
+*.lcov
+
+# secrets and signing material
+.env
+.env.*
+*.pem
+*.key
+
+# packed extensions: this project is load-unpacked only
+*.crx
+*.zip
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

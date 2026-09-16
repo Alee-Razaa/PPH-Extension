@@ -45,7 +45,7 @@ Repo setup (PowerShell, from `E:\PPH-Extention`):
 git init -b main
 git add -A
 git commit -m "docs: spec rev 2, CLAUDE.md, handoff"
-gh repo create pph-job-radar --private --source=. --remote=origin --push
+gh repo create PPH-Extension --private --source=. --remote=origin --push
 ```
 
 Then start Claude Code in this folder (or keep using the desktop app pointed at it).

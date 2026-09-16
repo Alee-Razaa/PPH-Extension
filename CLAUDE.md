@@ -96,6 +96,6 @@ Never invent a "real" fixture. Ask me to run `tools/capture-fixture.js` in DevTo
 ## Commit style
 
 Conventional commits (`feat:`, `fix:`, `test:`, `docs:`, `chore:`). One phase per branch,
-squash merge to main, tag `v0.N.0`, keep `manifest.json` version in step.
+squash merge to main, tag `v0.N.0` (Phase 0 is `v0.0.1`), keep `manifest.json` and `package.json` versions in step.
 
 XEMTECH

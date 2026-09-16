@@ -1,0 +1,63 @@
+{
+  "manifest_version": 3,
+  "name": "PPH Job Radar",
+  "version": "0.0.1",
+  "description": "Alerts you the moment a new job is posted on PeoplePerHour. Local only.",
+  "minimum_chrome_version": "116",
+
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications",
+    "offscreen",
+    "idle"
+  ],
+
+  "host_permissions": [
+    "https://www.peopleperhour.com/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://www.peopleperhour.com/freelance-jobs*"],
+      "js": ["content/content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["content/main.js", "content/dom.js", "core/*.js", "platform/*.js"],
+      "matches": ["https://www.peopleperhour.com/*"],
+      "use_dynamic_url": true
+    }
+  ],
+
+  "action": {
+    "default_popup": "ui/popup.html",
+    "default_title": "PPH Job Radar",
+    "default_icon": { "16": "icons/16.png", "32": "icons/32.png" }
+  },
+
+  "options_ui": {
+    "page": "ui/options.html",
+    "open_in_tab": true
+  },
+
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
