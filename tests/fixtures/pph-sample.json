@@ -1,0 +1,131 @@
+{
+ "capturedAt": "2026-09-17T09:11:09.920Z",
+ "note": "Trimmed real capture: only parser fields kept, data literal replaced with a non-JSON stand-in. See SPEC 22.1.",
+ "raw": "window.PPHReact={};window.PPHReact.initialState={\"freelanceJobs\":{\"main\":{\"data\":[{\"id\":\"4522017\",\"type\":\"projects\"},{\"id\":\"4522015\",\"type\":\"projects\"},{\"id\":\"4522004\",\"type\":\"projects\"},{\"id\":\"4522003\",\"type\":\"projects\"},{\"id\":\"4522002\",\"type\":\"projects\"},{\"id\":\"4522001\",\"type\":\"projects\"},{\"id\":\"4521997\",\"type\":\"projects\"},{\"id\":\"4521993\",\"type\":\"projects\"},{\"id\":\"4521981\",\"type\":\"projects\"},{\"id\":\"4521973\",\"type\":\"projects\"}],\"meta\":{\"current-page\":1,\"applied_filters\":{\"sort\":\"latest\"}}},\"featured\":{\"data\":[]},\"completed\":{\"data\":[]}},\"entities\":{\"projects\":{\"4521973\":{\"id\":\"4521973\",\"type\":\"projects\",\"attributes\":{\"proj_id\":4521973,\"title\":\"Laptop Management\",\"url\":\"https://www.peopleperhour.com/freelance-jobs/business/management-development/laptop-management-4521973\",\"posted_dt\":\"2026-09-17 05:02:37\",\"budget\":200,\"currency\":\"USD\",\"project_type\":\"fixed_price\",\"proposalCount\":7,\"item_state\":\"open\",\"location_type\":\"remote\",\"etiquettes\":{\"featured\":false,\"opportunity\":false,\"prefunded\":false,\"urgent\":false,\"nda\":false},\"category\":{\"cate_name\":\"Business\"},\"sub_category\":{\"subcate_name\":\"Management & Development\"}}},\"4521981\":{\"id\":\"4521981\",\"type\":\"projects\",\"attributes\":{\"proj_id\":4521981,\"title\":\"Webflow developer for ongoing magazine website maintenance\",\"url\":\"https://www.peopleperhour.com/freelance-jobs/technology-programming/cms-development/webflow-developer-for-ongoing-magazine-website-maintenance-4521981\",\"posted_dt\":\"2026-09-17 07:21:01\",\"budget\":40,\"currency\":\"GBP\",\"project_type\":\"hourly\",\"proposalCount\":41,\"item_state\":\"open\",\"location_type\":\"remote\",\"etiquettes\":{\"featured\":false,\"opportunity\":false,\"prefunded\":false,\"urgent\":false,\"nda\":false},\"category\":{\"cate_name\":\"Technology & Programming\"},\"sub_category\":{\"subcate_name\":\"CMS Development\"}}},\"4521993\":{\"id\":\"4521993\",\"type\":\"projects\",\"attributes\":{\"proj_id\":4521993,\"title\":\"Instagram Market Research & Outreach – UAE/GCC\",\"url\":\"https://www.peopleperhour.com/freelance-jobs/technology-programming/databases/instagram-market-research-outreach-uae-gcc-4521993\",\"posted_dt\":\"2026-09-17 07:21:24\",\"budget\":200,\"currency\":\"USD\",\"project_type\":\"fixed_price\",\"proposalCount\":4,\"item_state\":\"open\",\"location_type\":\"remote\",\"etiquettes\":{\"featured\":false,\"opportunity\":false,\"prefunded\":false,\"urgent\":false,\"nda\":false},\"category\":{\"cate_name\":\"Technology & Programming\"},\"sub_category\":{\"subcate_name\":\"Databases\"}}},\"4521997\":{\"id\":\"4521997\",\"type\":\"projects\",\"attributes\":{\"proj_id\":4521997,\"title\":\"Canva Design\",\"url\":\"https://www.peopleperhour.com/freelance-jobs/design/graphic-design/canva-design-4521997\",\"posted_dt\":\"2026-09-17 07:34:58\",\"budget\":6,\"currency\":\"GBP\",\"project_type\":\"fixed_price\",\"proposalCount\":26,\"item_state\":\"open\",\"location_type\":\"remote\",\"etiquettes\":{\"featured\":false,\"opportunity\":false,\"prefunded\":false,\"urgent\":false,\"nda\":false},\"category\":{\"cate_name\":\"Design\"},\"sub_category\":{\"subcate_name\":\"Graphic Design\"}}},\"4522001\":{\"id\":\"4522001\",\"type\":\"projects\",\"attributes\":{\"proj_id\":4522001,\"title\":\"TikTok copyright removal assistance needed\",\"url\":\"https://www.peopleperhour.com/freelance-jobs/business/legal-services/tiktok-copyright-removal-assistance-needed-4522001\",\"posted_dt\":\"2026-09-17 08:26:10\",\"budget\":275,\"currency\":\"GBP\",\"project_type\":\"fixed_price\",\"proposalCount\":10,\"item_state\":\"open\",\"location_type\":\"remote\",\"etiquettes\":{\"featured\":false,\"opportunity\":false,\"prefunded\":false,\"urgent\":false,\"nda\":false},\"category\":{\"cate_name\":\"Business\"},\"sub_category\":{\"subcate_name\":\"Legal Services\"}}},\"4522002\":{\"id\":\"4522002\",\"type\":\"projects\",\"attributes\":{\"proj_id\":4522002,\"title\":\"need a magazine website updating\",\"url\":\"https://www.peopleperhour.com/freelance-jobs/design/web-design/need-a-magazine-website-updating-4522002\",\"posted_dt\":\"2026-09-17 08:25:06\",\"budget\":100,\"currency\":\"EUR\",\"project_type\":\"fixed_price\",\"proposalCount\":32,\"item_state\":\"open\",\"location_type\":\"remote\",\"etiquettes\":{\"featured\":false,\"opportunity\":false,\"prefunded\":false,\"urgent\":false,\"nda\":false},\"category\":{\"cate_name\":\"Design\"},\"sub_category\":{\"subcate_name\":\"Web Design\"}}},\"4522003\":{\"id\":\"4522003\",\"type\":\"projects\",\"attributes\":{\"proj_id\":4522003,\"title\":\"Google Ads Specialist for Premium AI Brand\",\"url\":\"https://www.peopleperhour.com/freelance-jobs/digital-marketing/sem-google-ads-ppc/google-ads-specialist-for-premium-ai-brand-4522003\",\"posted_dt\":\"2026-09-17 08:26:18\",\"budget\":600,\"currency\":\"USD\",\"project_type\":\"fixed_price\",\"proposalCount\":14,\"item_state\":\"open\",\"location_type\":\"remote\",\"etiquettes\":{\"featured\":false,\"opportunity\":true,\"prefunded\":false,\"urgent\":false,\"nda\":false},\"category\":{\"cate_name\":\"Digital Marketing\"},\"sub_category\":{\"subcate_name\":\"SEM, Google Ads & PPC\"}}},\"4522004\":{\"id\":\"4522004\",\"type\":\"projects\",\"attributes\":{\"proj_id\":4522004,\"title\":\"AI SEO & GEO Expert to Optimise Website for AI Search\",\"url\":\"https://www.peopleperhour.com/freelance-jobs/digital-marketing/seo/ai-seo-geo-expert-to-optimise-website-for-ai-search-4522004\",\"posted_dt\":\"2026-09-17 09:03:46\",\"budget\":100,\"currency\":\"GBP\",\"project_type\":\"fixed_price\",\"proposalCount\":4,\"item_state\":\"open\",\"location_type\":\"remote\",\"etiquettes\":{\"featured\":false,\"opportunity\":false,\"prefunded\":false,\"urgent\":false,\"nda\":false},\"category\":{\"cate_name\":\"Digital Marketing\"},\"sub_category\":{\"subcate_name\":\"SEO\"}}},\"4522015\":{\"id\":\"4522015\",\"type\":\"projects\",\"attributes\":{\"proj_id\":4522015,\"title\":\"WordPress Website Design and Development\",\"url\":\"https://www.peopleperhour.com/freelance-jobs/technology-programming/website-development/wordpress-website-design-and-development-4522015\",\"posted_dt\":\"2026-09-17 09:04:22\",\"budget\":300,\"currency\":\"GBP\",\"project_type\":\"fixed_price\",\"proposalCount\":17,\"item_state\":\"open\",\"location_type\":\"remote\",\"etiquettes\":{\"featured\":false,\"opportunity\":true,\"prefunded\":false,\"urgent\":false,\"nda\":false},\"category\":{\"cate_name\":\"Technology & Programming\"},\"sub_category\":{\"subcate_name\":\"Website Development\"}}},\"4522017\":{\"id\":\"4522017\",\"type\":\"projects\",\"attributes\":{\"proj_id\":4522017,\"title\":\"GEO / AEO Specialist Needed for FMCG Brand Pilot\",\"url\":\"https://www.peopleperhour.com/freelance-jobs/digital-marketing/seo/geo-aeo-specialist-needed-for-fmcg-brand-pilot-4522017\",\"posted_dt\":\"2026-09-17 09:02:26\",\"budget\":40,\"currency\":\"GBP\",\"project_type\":\"hourly\",\"proposalCount\":4,\"item_state\":\"open\",\"location_type\":\"remote_country\",\"etiquettes\":{\"featured\":false,\"opportunity\":false,\"prefunded\":false,\"urgent\":false,\"nda\":false},\"category\":{\"cate_name\":\"Digital Marketing\"},\"sub_category\":{\"subcate_name\":\"SEO\"}}}}}};window.PPHReact.data={notJson:true,fn:function(){return \"a;b\"}};window.PPHReact.serverTime='1789636253861';",
+ "cards": [
+  {
+   "href": "https://www.peopleperhour.com/freelance-jobs/digital-marketing/seo/geo-aeo-specialist-needed-for-fmcg-brand-pilot-4522017",
+   "title": "GEO / AEO Specialist Needed for FMCG Brand Pilot",
+   "price": "$54/hr",
+   "footer": [
+    "8 minutes ago",
+    "4 proposals",
+    "Remote",
+    "Remote"
+   ],
+   "badges": []
+  },
+  {
+   "href": "https://www.peopleperhour.com/freelance-jobs/technology-programming/website-development/wordpress-website-design-and-development-4522015",
+   "title": "WordPress Website Design and Development",
+   "price": "$403",
+   "footer": [
+    "7 minutes ago",
+    "17 proposals",
+    "Remote",
+    "Remote"
+   ],
+   "badges": [
+    "opportunity"
+   ]
+  },
+  {
+   "href": "https://www.peopleperhour.com/freelance-jobs/digital-marketing/seo/ai-seo-geo-expert-to-optimise-website-for-ai-search-4522004",
+   "title": "AI SEO & GEO Expert to Optimise Website for AI Search",
+   "price": "$134",
+   "footer": [
+    "7 minutes ago",
+    "4 proposals",
+    "Remote",
+    "Remote"
+   ],
+   "badges": []
+  },
+  {
+   "href": "https://www.peopleperhour.com/freelance-jobs/digital-marketing/sem-google-ads-ppc/google-ads-specialist-for-premium-ai-brand-4522003",
+   "title": "Google Ads Specialist for Premium AI Brand",
+   "price": "$600",
+   "footer": [
+    "an hour ago",
+    "14 proposals",
+    "Remote",
+    "Remote"
+   ],
+   "badges": [
+    "opportunity"
+   ]
+  },
+  {
+   "href": "https://www.peopleperhour.com/freelance-jobs/design/web-design/need-a-magazine-website-updating-4522002",
+   "title": "Need a magazine website updating",
+   "price": "$115",
+   "footer": [
+    "an hour ago",
+    "32 proposals",
+    "Remote",
+    "Remote"
+   ],
+   "badges": []
+  },
+  {
+   "href": "https://www.peopleperhour.com/freelance-jobs/business/legal-services/tiktok-copyright-removal-assistance-needed-4522001",
+   "title": "TikTok copyright removal assistance needed",
+   "price": "$369",
+   "footer": [
+    "an hour ago",
+    "10 proposals",
+    "Remote",
+    "Remote"
+   ],
+   "badges": []
+  },
+  {
+   "href": "https://www.peopleperhour.com/freelance-jobs/design/graphic-design/canva-design-4521997",
+   "title": "Canva Design",
+   "price": "$8",
+   "footer": [
+    "2 hours ago",
+    "26 proposals",
+    "Remote",
+    "Remote"
+   ],
+   "badges": []
+  },
+  {
+   "href": "https://www.peopleperhour.com/freelance-jobs/technology-programming/databases/instagram-market-research-outreach-uae-gcc-4521993",
+   "title": "Instagram Market Research & Outreach – UAE/GCC",
+   "price": "$200",
+   "footer": [
+    "2 hours ago",
+    "4 proposals",
+    "Remote",
+    "Remote"
+   ],
+   "badges": []
+  },
+  {
+   "href": "https://www.peopleperhour.com/freelance-jobs/technology-programming/cms-development/webflow-developer-for-ongoing-magazine-website-maintenance-4521981",
+   "title": "Webflow developer for ongoing magazine website maintenance",
+   "price": "$54/hr",
+   "footer": [
+    "2 hours ago",
+    "41 proposals",
+    "Remote",
+    "Remote"
+   ],
+   "badges": []
+  },
+  {
+   "href": "https://www.peopleperhour.com/freelance-jobs/business/management-development/laptop-management-4521973",
+   "title": "Laptop Management",
+   "price": "$200",
+   "footer": [
+    "4 hours ago",
+    "7 proposals",
+    "Remote",
+    "Remote"
+   ],
+   "badges": []
+  }
+ ]
+}

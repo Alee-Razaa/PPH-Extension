@@ -67,7 +67,7 @@ state.entities.projects[id].attributes -> the actual job
 ```
 
 `state.freelanceJobs.main.meta.applied_filters.sort` is **"latest" by default**. Verified that
-`main.data` order is strictly descending by `posted_dt`. So index 0..4 = newest 5 jobs. No sort click needed.
+`main.data` order is newest listing first (ids descending). NOTE 2026-09-17: NOT strictly by `posted_dt`, see SPEC 3.3. No sort click needed.
 
 `main.data` has exactly 20 items per page. `featured` and `completed` arrays were empty on the default view, but code must tolerate them being non empty and must never mix them into the top 5.
 

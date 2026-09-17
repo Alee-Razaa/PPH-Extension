@@ -185,7 +185,9 @@ state.freelanceJobs.completed.data     -> may be non empty. IGNORE IT.
 state.entities.projects[id].attributes -> the job itself
 ```
 
-`main.data` is strictly descending by `posted_dt`. Index 0 to 4 is the newest 5. Verified.
+`main.data` is in **listing order, newest listing first**: project ids strictly descending. Index 0 to 4 is the 5 newest listings.
+
+**Correction (live check 2026-09-17, Phase 1):** revision 1 said the list is strictly descending by `posted_dt`. It is not. Job `4522017` (posted `09:02:26`) was listed above `4522015` (posted `09:04:22`). A job can reach the top of the list a few minutes after its `posted_dt`, so its age at first sight can already be a few minutes. Phase 3 must account for this: see the risk register row "Job listed late".
 
 ### 3.4 Job attributes used
 
@@ -199,7 +201,7 @@ state.entities.projects[id].attributes -> the job itself
 | `project_type` | `fixed_price` / `hourly` | Notification body |
 | `proposalCount` | `8` | Competition filter |
 | `item_state` | `open` | Skip anything not `open` |
-| `location_type` | `remote` / `onsite` | Remote-only filter |
+| `location_type` | `remote` / `remote_country` / `onsite` | Remote-only filter. Anything starting with `remote` counts as remote (seen live 2026-09-17) |
 | `etiquettes` | `{featured, opportunity, prefunded, urgent, nda}` | Priority flag |
 | `category.cate_name`, `sub_category.subcate_name` | | Keyword filter |
 
@@ -1602,12 +1604,13 @@ Everything in `src/core/` is tested on plain data. `content/dom.js` is the only 
 | U2 | `time.test.js` | `relToMs` on every variant in 3.6 including `in a few seconds`, uppercase, extra spaces, and unknown text -> `UNKNOWN_AGE_MS`. `ageMatchesText` true at ±1 min, false at ±2 min, hour bucket tolerance. `formatAge` output |
 | U3 | `parser.test.js` | `extractStateJson` on the real fixture returns JSON that parses and a 13 digit `serverTimeMs`. Returns `null` for: no `initialState`, no `serverTime`, non-string, over `MAX_SCRIPT_CHARS`. Never touches the `data=` literal |
 | U4 | `parser.test.js` | `jobsFromState` returns `topN` jobs in `main.data` order, ignores `featured` and `completed`, returns `null` when an entity is missing or the shape is wrong. On the real fixture, ages are finite and the list is newest first |
-| U5 | `parser.test.js` | `jobsFromCards` on the real fixture's cards returns the **same ids** as `jobsFromState` on the same fixture (R12). `idFromUrl` on real and odd hrefs. Price parsing for `£88`, `$25/hr`, empty |
+| U5 | `parser.test.js` | `jobsFromCards` on synthetic cards returns the **same ids** as `jobsFromState` (R12). On the real fixture every card href yields a numeric id, every state top-N id has a card, and each state age passes `ageMatchesText` against its card text. DOM order may differ from state order (featured rows can be injected, RESEARCH 2.7), which is logged as a diagnostic, not a failure. `idFromUrl` on real and odd hrefs. Price parsing for `£88`, `$25/hr`, empty |
 | U6 | `validate.test.js` | `checkGates` rejects, with the named error: 4 jobs, NaN `postedMs`, duplicate id, job 2 min in the future, `serverTimeMs` 25 h from `nowMs`, non-numeric id. Accepts a clean set. `sanitizeJob` clamps budget and proposals, caps title at 300, coerces junk types, and sets `url` to `null` for `http://`, `javascript:`, `https://www.peopleperhour.com.evil.com/`, `https://evil.com/?u=https://www.peopleperhour.com/` |
 | U7 | `schedule.test.js` | `nextDelayMin` with `rand = () => 0` and `() => 0.999`: fixed 3 -> 3, fixed 10 -> 10, random 5 to 10 in range. Backoff ladder at 0..6 failures, and at interval 30 the ladder never shortens it. `effectiveFreshMin` table from 4.4, and with auto widen off. `nextRunAt` floors at `now + 30 s` and anchors on cycle start. `reloadCap` at 2, 3, 5, 10 min. `hourBucket` |
 | U8 | `select.test.js` | `passesFilters` truth table: include, exclude, budget, proposals, remote, prefunded, combinations, case insensitivity. `pickFresh` excludes seen, non-open, outside window. `overflow` true only when every job is fresh and unseen. `markSeen` keeps first-seen time. `pruneSeen` at 6 h |
 | U9 | `settings.test.js` | `mergeSettings` keeps user values, adds new keys, deep merges `sound` and `filters`. `clampSettings`: interval below 2 -> 2, above 60 -> 60, max < min -> max = min, wrong types -> defaults, unknown sound file -> default, keyword lists capped. `timingChanged` true only for timing keys. `applyPreset` for all three presets |
 | U10 | `purity.test.js` | Static rule check by reading source text. `src/core/**` matches none of `/\b(chrome|document|window|navigator)\s*\./`, `/\bDate\.now\s*\(/`, `/\bMath\.random\s*\(/`, `/\b(fetch|setTimeout|setInterval)\s*\(/`, and every `import` specifier starts with `./`. (The `window\.PPHReact` regex in `parser.js` does not match, because of the backslash.) `src/**` contains none of: `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `eval(`, `new Function`, `fetch(`, `XMLHttpRequest`, `http://`, `https://` other than the PeoplePerHour origin. `chrome.` appears only in `src/platform/**` and the single bootstrap line in `content/content.js`. `manifest.json` has no `<all_urls>`, the exact CSP, and host permissions only for `www.peopleperhour.com` |
+| U12 | `dom.test.js` | `content/dom.js` wiring against a minimal fake document (plain objects with `querySelector`/`querySelectorAll`, no jsdom): readiness prefers the state script, blocked detection, state first then DOM fallback with `failures` recorded, and every `reason` |
 | U11 | `cycle.test.js` | `decidePrecheck` for every row of 8.2, including row 10 (unanswered PING continues). `isCycleSender`: wrong tab, subframe, no lock, stale lock. `statusForReason` map. `backoffApplies` set |
 
 **U1, exactly this shape:**
@@ -1763,6 +1766,7 @@ Backoff ladder wiring, DOM fallback wiring, blocked detection, hourly cap, pruni
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
+| Job listed late: reaches the top of the list minutes after its `posted_dt`, so it may already be outside the fresh window at first sight | Medium | High | Seen live in Phase 1. Decide in Phase 3: also alert on an unseen job whose id is higher than every id seen so far (after the first cycle), regardless of age |
 | PPH changes the inline state script shape | Medium | High | DOM fallback, sanity gates, `PARSE_FAILED` notification after two failures |
 | PPH changes CSS module hashes | High (every deploy) | Low | Prefix matching only. Already handled |
 | PPH adds a bot check on repeated loads | Low at this rate | High | Jitter, hourly cap, `BLOCKED` detection that stops instead of retrying |
