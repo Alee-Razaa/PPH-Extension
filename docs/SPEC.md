@@ -572,7 +572,7 @@ No `dependencies`, no `devDependencies`. Ever.
     {
       "resources": ["content/main.js", "content/dom.js", "core/*.js", "platform/*.js"],
       "matches": ["https://www.peopleperhour.com/*"],
-      "use_dynamic_url": true
+      "use_dynamic_url": false
     }
   ],
 
@@ -616,9 +616,7 @@ No `dependencies`, no `devDependencies`. Ever.
 
 **Content script loading (R2).** `content/content.js` is the only file Chrome injects, as a classic script. It does one thing: `import(chrome.runtime.getURL('content/main.js'))`. `main.js` then statically imports `dom.js`, `core/*` and `platform/*`. Every file in that import graph must match `web_accessible_resources`, or the import fails with a network error in the page console.
 
-Verified working on Chrome 153.0.8010.47 (Phase 0, 2026-09-17).
-
-`use_dynamic_url: true` stops the site probing for the extension by a fixed URL. If the dynamic import fails with it on during Phase 0, set it to `false`, note the Chrome version here, and move on. It is a nicety for a local tool, not a requirement.
+**`use_dynamic_url` must be `false` (found 2026-09-17, Chrome 153.0.8010.47).** With `true`, `content/main.js` itself loads, but its static imports (`../core/*.js`, `../platform/*.js`) fail with "Failed to fetch dynamically imported module", so the content script never starts and every cycle ends `UNRESPONSIVE`. Phase 0 did not catch it because its `main.js` imported nothing. Caught by `tools/e2e.mjs` in a real Chrome. U10 now fails if it is set back to `true`. The cost is that PeoplePerHour pages could detect the extension by its fixed id, which is acceptable for this tool.
 
 **Pages it runs on.** The match pattern also covers job detail pages (`/freelance-jobs/<category>/<slug>-<id>`). `main.js` exits at once unless `location.pathname === '/freelance-jobs'` (R13).
 
@@ -746,6 +744,8 @@ Settings shape is section 9.
 | 11 | Tab URL unreadable or not the base path | continue, `reloadTo` navigates it back | - |
 
 Row 10 is a rev 2 change (R11). A tab opened before the extension was installed or reloaded has no content script, so it can never answer `PING`. Rev 1 skipped such a tab forever. Now we reload anyway. If the page is truly dead, the 90 s watchdog marks the cycle `UNRESPONSIVE` and backoff applies.
+
+**Reopen order (Phase 2).** When the monitor tab must be (re)opened, the worker creates it pinned at `about:blank`, writes the lock, then navigates it to the jobs page. The page therefore can never send `HELLO` before the lock exists.
 
 ### 8.3 Settle, done properly
 
@@ -943,6 +943,8 @@ Every message carries `type` (constants in `MSG`). Every request is wrapped in a
 | `CLEAR_LOG` / `CLEAR_SEEN` / `RESET_SETTINGS` | options -> worker | `{}` | `{ ok }` |
 
 Rev 1 `JOBS` carried a `cycleId`. Removed (R8): a reloaded content script has no way to know it. The lock's `tabId` plus `sender.tab.id` identifies the cycle instead.
+
+**Sender guard (Phase 2).** `senderAllowed` in `core/cycle.js`: content scripts (a tab and a web page URL) may send only `HELLO`, `JOBS` and `NET_BACK`. Every other type must come from the extension's own pages (`sender.url` starts with `runtime.getURL("")`). Anything else is answered `{ ok: false, error: "FORBIDDEN" }`.
 
 `FORCE_CHECK` is rate limited to once per 30 s and counts toward the hourly cap. `settleSec` override is honoured only when `settings.debug` is on (21.4).
 
@@ -1611,6 +1613,7 @@ Everything in `src/core/` is tested on plain data. `content/dom.js` is the only 
 | U9 | `settings.test.js` | `mergeSettings` keeps user values, adds new keys, deep merges `sound` and `filters`. `clampSettings`: interval below 2 -> 2, above 60 -> 60, max < min -> max = min, wrong types -> defaults, unknown sound file -> default, keyword lists capped. `timingChanged` true only for timing keys. `applyPreset` for all three presets |
 | U10 | `purity.test.js` | Static rule check by reading source text. `src/core/**` matches none of `/\b(chrome|document|window|navigator)\s*\./`, `/\bDate\.now\s*\(/`, `/\bMath\.random\s*\(/`, `/\b(fetch|setTimeout|setInterval)\s*\(/`, and every `import` specifier starts with `./`. (The `window\.PPHReact` regex in `parser.js` does not match, because of the backslash.) `src/**` contains none of: `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `eval(`, `new Function`, `fetch(`, `XMLHttpRequest`, `http://`, `https://` other than the PeoplePerHour origin. `chrome.` appears only in `src/platform/**` and the single bootstrap line in `content/content.js`. `manifest.json` has no `<all_urls>`, the exact CSP, and host permissions only for `www.peopleperhour.com` |
 | U12 | `dom.test.js` | `content/dom.js` wiring against a minimal fake document (plain objects with `querySelector`/`querySelectorAll`, no jsdom): readiness prefers the state script, blocked detection, state first then DOM fallback with `failures` recorded, and every `reason` |
+| U13 | `background.test.js` | The real `src/background.js` against an in-memory fake `chrome` (`tests/fakes/chrome.js`) with Date and `Math.random` mocked. Covers install/startup, first tick opening a pinned tab, HELLO gating, JOBS completion and re-validation, watchdog, live interval changes (10 -> 3 -> 10, custom, mid-cycle), pause/resume, hourly cap, offline + NET_BACK, tab without content script (R11), wandered tab, tab closed, BLOCKED + resume, worker restart with stale lock, FORCE_CHECK rate limit and debug settle, message sender guard, OPEN_MONITOR_TAB, own-tab mode, GET_STATUS. Stands in for integration tests 7, 10, 11, 13, 14, 16, 17, 26, 29, 30 at the logic level; a short real Chrome check still confirms the wiring |
 | U11 | `cycle.test.js` | `decidePrecheck` for every row of 8.2, including row 10 (unanswered PING continues). `isCycleSender`: wrong tab, subframe, no lock, stale lock. `statusForReason` map. `backoffApplies` set |
 
 **U1, exactly this shape:**

@@ -136,8 +136,12 @@ test('manifest: permissions, hosts, CSP, worker, content script', () => {
   assert.equal(cs.css, undefined);
   assert.ok(cs.matches.every(isAllowedUrl));
 
-  for (const war of manifest.web_accessible_resources ?? [])
+  for (const war of manifest.web_accessible_resources ?? []) {
     assert.ok(war.matches.every(isAllowedUrl), 'web accessible resources exposed only to PeoplePerHour');
+    // Chrome 153: with use_dynamic_url true, static imports inside the dynamically imported content
+    // module fail to fetch, so the content script never starts. Found by tools/e2e.mjs (SPEC 6).
+    assert.notEqual(war.use_dynamic_url, true, 'use_dynamic_url breaks the content module graph');
+  }
 });
 
 test('manifest: every referenced file exists', () => {

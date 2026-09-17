@@ -7,7 +7,7 @@ A personal Chrome extension that watches the PeoplePerHour jobs page and alerts 
 - Nothing leaves your machine. No servers, no analytics, no network calls of its own.
 - Installed locally with **Load unpacked**. It is not on the Chrome Web Store.
 
-> **Status:** Phase 0 (scaffold) accepted on Chrome 153. Checking and alerts arrive in Phases 1 to 3. See `docs/SPEC.md` section 23.
+> **Status:** Phase 2 (auto refresh on your chosen interval). The extension keeps its own pinned jobs tab and reloads it on schedule. Alerts (sound + notification) arrive in Phase 3. See `docs/SPEC.md` section 23.
 
 Repository: [Alee-Razaa/PPH-Extension](https://github.com/Alee-Razaa/PPH-Extension) (private). Owner: XEMTECH.
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PPH Job Radar",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Alerts you the moment a new job is posted on PeoplePerHour. Local only.",
   "minimum_chrome_version": "116",
 
@@ -35,7 +35,7 @@
     {
       "resources": ["content/main.js", "content/dom.js", "core/*.js", "platform/*.js"],
       "matches": ["https://www.peopleperhour.com/*"],
-      "use_dynamic_url": true
+      "use_dynamic_url": false
     }
   ],
 

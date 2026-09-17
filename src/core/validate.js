@@ -1,6 +1,6 @@
 // Sanitizers and sanity gates. SPEC 8.4 and 18. Site data is untrusted: clamp, cap, coerce. Pure.
 import { ok, err } from './result.js';
-import { PPH_HOST, LIMITS, GATE } from './constants.js';
+import { PPH_HOST, BASE_PATH, LIMITS, GATE } from './constants.js';
 
 const clamp = (n, lo, hi) => (Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : lo);
 const str = (v, max) => (typeof v === 'string' || typeof v === 'number' ? String(v) : '').slice(0, max);
@@ -15,6 +15,13 @@ export function isPphUrl(u) {
   } catch {
     return false;
   }
+}
+
+/** Exactly the first page of the jobs list, so a reload (not a navigation) is enough. */
+export function isBaseJobsUrl(u) {
+  if (!isPphUrl(u)) return false;
+  const url = new URL(u);
+  return url.pathname === BASE_PATH && url.search === '';
 }
 
 /** @returns {import('./constants.js').Job} */

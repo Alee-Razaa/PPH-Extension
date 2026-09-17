@@ -1,6 +1,7 @@
 // Content entry module. SPEC 8.1, 8.3, 25.7.
-// Phase 1: the worker has no HELLO handler yet, so the reply is null and this runs in debug mode:
-// parse the base jobs page and console.table each job's age next to the page's own text.
+// Asks the worker (HELLO) whether this tab is the monitor tab in a live cycle. Only then does it settle,
+// parse and report JOBS. Any other PeoplePerHour tab does nothing, unless settings.debug is on, in which
+// case it parses and console.tables each job's age next to the page's own text without reporting.
 import { DEFAULTS, LIMITS, MSG, BASE_PATH, REASON, TIME } from '../core/constants.js';
 import { formatAge, ageMatchesText } from '../core/time.js';
 import { idFromUrl } from '../core/parser.js';
@@ -20,11 +21,12 @@ export async function start() {
   addEventListener('pagehide', () => { offPing(); removeEventListener('online', onOnline); }, { once: true });
 
   const hello = await sendToWorker({ type: MSG.HELLO }, LIMITS.MESSAGE_TIMEOUT_MS);
-  const debug = hello === null || hello.debug === true;
-  if (!hello?.isMonitor && !debug) return;                       // not the monitor tab: do nothing
+  if (!hello) return;                                             // worker unreachable: never act alone
+  const debug = hello.debug === true;
+  if (!hello.isMonitor && !debug) return;                         // not the monitor tab: do nothing (R13)
 
-  const topN = hello?.topN ?? DEFAULTS.topN;
-  const settleSec = hello?.settleSec ?? DEFAULTS.settleSec;
+  const topN = Number.isInteger(hello.topN) ? hello.topN : DEFAULTS.topN;
+  const settleSec = Number.isFinite(hello.settleSec) ? hello.settleSec : DEFAULTS.settleSec;
   if (debug) console.info(TAG, `debug parse in ${settleSec}s (top ${topN})`);
   await sleep(settleSec * TIME.SECOND_MS);
 
@@ -38,7 +40,7 @@ export async function start() {
     : { ok: false, reason: REASON.NOT_READY, failures: [] };
 
   if (debug) logCrossCheck(result);
-  if (hello?.isMonitor) await sendToWorker({ type: MSG.JOBS, result }, LIMITS.MESSAGE_TIMEOUT_MS);
+  if (hello.isMonitor) await sendToWorker({ type: MSG.JOBS, result }, LIMITS.MESSAGE_TIMEOUT_MS);
 }
 
 /** Phase 1 acceptance: our computed age vs the page's rounded "N minutes ago", matched by job id. */
