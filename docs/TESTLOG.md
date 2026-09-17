@@ -4,6 +4,10 @@ Manual and integration results per phase (SPEC 23 step 5). Newest first.
 
 | Date | Phase | Test | Chrome version | Result | Notes |
 |---|---|---|---|---|---|
+| 2026-09-17 | 1.0.0 | Release zip e2e (unzipped `dist/pph-job-radar-1.0.0.zip`, real Chrome, live site) | 153.0.8010.47 | pass | 23/23: auto check, pinned tab, 5 real jobs, schedule, 3/10-min switches, popup renders + "3 min" button, options autosave, Check now, 2 real notifications + 1 sound, no repeats, test buttons, user tab untouched, zero extension errors |
+| 2026-09-17 | 1.0.0 | Release zip integrity | n/a | pass | 42 files, 78.8 KB, every file SHA-256 identical to `src/` |
+| 2026-09-17 | 4-5 | Screenshots popup + options, light + dark, 375 px width | 153.0.8010.47 | pass | Fixed: custom interval shown while hidden, stretched preset bar, badge separator, log label. No horizontal overflow at 375 px, no page errors |
+| 2026-09-17 | 1.0.0 | `npm test` + `npm run coverage` | n/a | pass | 122 tests. `src/core` 100% lines, branches, functions |
 | 2026-09-17 | 3 | Real Chrome e2e with alerts (`tools/e2e.mjs`) | 153.0.8010.47 | pass | 19/19 functional: 2 real new jobs -> 2 notifications + 1 sound via offscreen; second check 0 repeats; Test notification + Test sound OK. Extension-error check fixed in the tool (regex bug) |
 | 2026-09-17 | 3 | `npm test` + `npm run coverage` | n/a | pass | 122 pass (8 new worker alert tests). `src/core` 100% lines, branches, functions |
 | 2026-09-17 | 2 | Real Chrome e2e (`tools/e2e.mjs`, throwaway profile, live site) | 153.0.8010.47 | pass | 11/11 functional checks: auto first check OK in 57 s, one pinned tab, 5 real jobs, next check 7.24 min, 3-min and 10-min switches applied instantly, user tab untouched |

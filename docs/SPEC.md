@@ -9,6 +9,24 @@
 
 ---
 
+## Release 1.0.0 notes (2026-09-17)
+
+Built and verified: Phases 0 to 6. Deviations from the text below, all deliberate:
+
+| Item | Change | Why |
+|---|---|---|
+| `use_dynamic_url` | `false` | `true` breaks the content module imports in Chrome 153 (section 6) |
+| Light theme `--accent` | `#0e8f70` instead of `#10a37f` | White text on `#10a37f` is about 3:1, below the 4.5:1 rule in section 17 |
+| Phases 4 and 5 | Built together on one branch | Owner asked for the remaining work to be completed in one go |
+| Integration tests 7-30 | Automated: `tests/background.test.js` (fake Chrome) plus `tools/e2e.mjs` (real Chrome 153, live site) | Owner cannot run manual checks; both are recorded in TESTLOG |
+| Messages | Added `CLEAR_UNREAD`; sender guard (section 10) | Popup clears the badge count on open; content scripts cannot change settings |
+| New jobs rule | Late-listing rule (risk register) | Live data showed jobs listed minutes after `posted_dt` |
+| Release | `npm run build` writes a verified zip under 1 MB | "Production ready" build requested |
+
+Not automated (need a person or a real device): sleep/wake catch-up (test 18), 8-hour soak (test 25), screen-reader pass. The logic behind 18 is covered by the stale-lock and window tests.
+
+---
+
 ## Revision 2 changes (2026-09-17)
 
 Review of revision 1 found these problems. All are fixed below. Do not reintroduce them.

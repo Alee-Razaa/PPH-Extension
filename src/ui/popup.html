@@ -4,14 +4,41 @@
   <meta charset="utf-8">
   <meta name="color-scheme" content="light dark">
   <title>PPH Job Radar</title>
-  <style>
-    body { width: 340px; margin: 0; padding: 16px; font: 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    h1 { font-size: 15px; margin: 0 0 4px; }
-    p { margin: 0; opacity: .7; }
-  </style>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="popup.css">
+  <script type="module" src="popup.js"></script>
 </head>
 <body>
-  <h1>PPH Job Radar</h1>
-  <p>Scaffold build. The popup arrives in Phase 4.</p>
+  <header class="header">
+    <div class="status" aria-live="polite">
+      <span id="dot" class="dot dot--hollow tone-idle" aria-hidden="true"></span>
+      <span id="status-label" class="status__label">Loading…</span>
+    </div>
+    <span id="countdown" class="countdown"></span>
+  </header>
+
+  <div id="notice" class="notice" hidden>
+    <p id="notice-text" class="notice__text"></p>
+    <div id="notice-actions" class="notice__actions"></div>
+  </div>
+
+  <main id="jobs" class="jobs" aria-label="Newest jobs">
+    <div class="skeleton" aria-hidden="true"></div>
+    <div class="skeleton" aria-hidden="true"></div>
+    <div class="skeleton" aria-hidden="true"></div>
+  </main>
+
+  <section class="interval" aria-labelledby="interval-label">
+    <span id="interval-label" class="interval__label">Check every</span>
+    <div id="presets" class="segmented" role="radiogroup" aria-labelledby="interval-label"></div>
+  </section>
+
+  <footer class="footer">
+    <button id="check-now" class="btn btn--primary" type="button">Check now</button>
+    <button id="pause" class="btn" type="button">Pause</button>
+    <button id="settings" class="btn icon-btn" type="button" aria-label="Settings" title="Settings">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1l.4 2.6h4l.4-2.6c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5L19.4 13ZM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" transform="translate(-1 0)"/></svg>
+    </button>
+  </footer>
 </body>
 </html>

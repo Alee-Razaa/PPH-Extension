@@ -3,16 +3,205 @@
 <head>
   <meta charset="utf-8">
   <meta name="color-scheme" content="light dark">
-  <title>PPH Job Radar - Options</title>
-  <style>
-    body { max-width: 720px; margin: 40px auto; padding: 0 16px; font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    h1 { font-size: 18px; margin: 0 0 8px; }
-    p { margin: 0 0 8px; opacity: .75; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PPH Job Radar settings</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="options.css">
+  <script type="module" src="options.js"></script>
 </head>
 <body>
-  <h1>PPH Job Radar</h1>
-  <p>Scaffold build. Options arrive in Phase 5.</p>
-  <p>This extension only reads the jobs page. It never applies, never signs in, and never touches your account.</p>
+  <header class="page-header">
+    <div>
+      <h1>PPH Job Radar</h1>
+      <p class="subtle">Alerts you when a new job is posted on PeoplePerHour. Changes save automatically.</p>
+    </div>
+    <span id="saved" class="pill tone-ok saved" role="status" aria-live="polite">Saved</span>
+  </header>
+
+  <main>
+    <!-- 1. Monitoring -->
+    <section class="card" aria-labelledby="h-monitoring">
+      <h2 id="h-monitoring">Monitoring</h2>
+
+      <div class="row">
+        <label class="row__label" for="enabled">Watch for new jobs</label>
+        <input id="enabled" class="switch" type="checkbox" role="switch">
+      </div>
+
+      <div class="row row--stack">
+        <span class="row__label" id="interval-label">Check every</span>
+        <div id="presets" class="segmented" role="radiogroup" aria-labelledby="interval-label">
+          <button type="button" role="radio" data-preset="every3" aria-checked="false">3 min</button>
+          <button type="button" role="radio" data-preset="random5to10" aria-checked="false">5–10 min</button>
+          <button type="button" role="radio" data-preset="every10" aria-checked="false">10 min</button>
+          <button type="button" role="radio" data-preset="custom" aria-checked="false">Custom</button>
+        </div>
+        <div id="custom-interval" class="custom" hidden>
+          <label for="intervalMode">Timing</label>
+          <select id="intervalMode">
+            <option value="fixed">Fixed</option>
+            <option value="random">Random range</option>
+          </select>
+          <label for="minIntervalMin" id="min-label">Every</label>
+          <input id="minIntervalMin" type="number" min="2" max="60" step="1" inputmode="numeric">
+          <span id="max-wrap"><label for="maxIntervalMin">to</label>
+          <input id="maxIntervalMin" type="number" min="2" max="60" step="1" inputmode="numeric"></span>
+          <span>minutes</span>
+        </div>
+        <p id="interval-text" class="hint"></p>
+        <p id="interval-warning" class="hint tone-warn" hidden></p>
+      </div>
+
+      <div class="row row--stack">
+        <label class="row__label" for="freshWindowMin">Alert for jobs posted within</label>
+        <div class="range"><input id="freshWindowMin" type="range" min="2" max="60" step="1"><output id="freshWindowMin-out" for="freshWindowMin"></output></div>
+        <label class="check"><input id="autoWidenFreshWindow" type="checkbox"> Widen automatically so no job posted between checks is missed</label>
+        <p id="fresh-text" class="hint"></p>
+      </div>
+
+      <div class="row row--stack">
+        <label class="row__label" for="topN">Jobs to check</label>
+        <div class="range"><input id="topN" type="range" min="3" max="20" step="1"><output id="topN-out" for="topN"></output></div>
+      </div>
+
+      <div class="row row--stack">
+        <label class="row__label" for="settleSec">Wait after reload</label>
+        <div class="range"><input id="settleSec" type="range" min="5" max="60" step="1"><output id="settleSec-out" for="settleSec"></output></div>
+        <p class="hint">Gives the page time to finish loading before it is read.</p>
+      </div>
+
+      <div class="row">
+        <label class="row__label" for="useOwnTab">Use a dedicated pinned tab</label>
+        <input id="useOwnTab" class="switch" type="checkbox" role="switch">
+      </div>
+      <p id="own-tab-warning" class="hint tone-warn" hidden>Off: an open PeoplePerHour jobs tab of yours is reloaded instead. You will lose your scroll position in that tab on every check.</p>
+
+      <div class="row">
+        <label class="row__label" for="pauseWhenLocked">Pause while the computer is locked</label>
+        <input id="pauseWhenLocked" class="switch" type="checkbox" role="switch">
+      </div>
+
+      <div class="row">
+        <span class="row__label">Monitor tab</span>
+        <button id="open-tab" class="btn" type="button">Open monitor tab</button>
+      </div>
+    </section>
+
+    <!-- 2. Filters -->
+    <details class="card" id="filters-card">
+      <summary><h2>Filters</h2><span class="subtle" id="filters-summary"></span></summary>
+
+      <div class="row row--stack">
+        <label class="row__label" for="include-input">Only alert if the title or category contains any of</label>
+        <div class="tags" data-field="keywordsInclude">
+          <ul class="tags__list" aria-label="Required words"></ul>
+          <input id="include-input" class="tags__input" type="text" placeholder="Type a word, press Enter" maxlength="50">
+        </div>
+      </div>
+
+      <div class="row row--stack">
+        <label class="row__label" for="exclude-input">Never alert if it contains</label>
+        <div class="tags" data-field="keywordsExclude">
+          <ul class="tags__list" aria-label="Blocked words"></ul>
+          <input id="exclude-input" class="tags__input" type="text" placeholder="Type a word, press Enter" maxlength="50">
+        </div>
+      </div>
+
+      <div class="row">
+        <label class="row__label" for="minBudget">Minimum budget</label>
+        <input id="minBudget" type="number" min="0" step="1" inputmode="numeric" class="num">
+      </div>
+      <div class="row">
+        <label class="row__label" for="maxProposals">Maximum proposals <span class="subtle">(blank = any)</span></label>
+        <input id="maxProposals" type="number" min="0" step="1" inputmode="numeric" class="num">
+      </div>
+      <div class="row">
+        <label class="row__label" for="remoteOnly">Remote jobs only</label>
+        <input id="remoteOnly" class="switch" type="checkbox" role="switch">
+      </div>
+      <div class="row">
+        <label class="row__label" for="prefundedOnly">Pre-funded jobs only</label>
+        <input id="prefundedOnly" class="switch" type="checkbox" role="switch">
+      </div>
+    </details>
+
+    <!-- 3. Alerts -->
+    <section class="card" aria-labelledby="h-alerts">
+      <h2 id="h-alerts">Alerts</h2>
+      <div class="row">
+        <label class="row__label" for="sound-enabled">Play a sound</label>
+        <input id="sound-enabled" class="switch" type="checkbox" role="switch">
+      </div>
+      <div class="row">
+        <label class="row__label" for="sound-file">Sound</label>
+        <select id="sound-file">
+          <option value="sounds/chime.wav">Chime (soft)</option>
+          <option value="sounds/ping.wav">Ping (short)</option>
+          <option value="sounds/alarm.wav">Alarm (loud)</option>
+        </select>
+      </div>
+      <div class="row row--stack">
+        <label class="row__label" for="sound-volume">Volume</label>
+        <div class="range"><input id="sound-volume" type="range" min="0" max="1" step="0.05"><output id="sound-volume-out" for="sound-volume"></output></div>
+      </div>
+      <div class="row">
+        <label class="row__label" for="highValueBudget">Loud alarm for budgets of at least <span class="subtle">(0 = off)</span></label>
+        <input id="highValueBudget" type="number" min="0" step="1" inputmode="numeric" class="num">
+      </div>
+      <div class="row row--stack">
+        <label class="row__label" for="maxNotificationsPerCycle">Most notifications per check</label>
+        <div class="range"><input id="maxNotificationsPerCycle" type="range" min="1" max="5" step="1"><output id="maxNotificationsPerCycle-out" for="maxNotificationsPerCycle"></output></div>
+        <p class="hint">Extra new jobs are grouped into one summary notification.</p>
+      </div>
+      <div class="row">
+        <label class="row__label" for="requireInteraction">Keep notifications on screen until clicked</label>
+        <input id="requireInteraction" class="switch" type="checkbox" role="switch">
+      </div>
+      <div class="row row--buttons">
+        <button id="test-sound" class="btn" type="button">Test sound</button>
+        <button id="test-notification" class="btn" type="button">Test notification</button>
+        <span id="test-result" class="hint" role="status" aria-live="polite"></span>
+      </div>
+      <p class="hint">Press <strong>Test sound</strong> once after installing. Chrome may block sound until the extension has been used once.</p>
+    </section>
+
+    <!-- 4. Safety -->
+    <section class="card" aria-labelledby="h-safety">
+      <h2 id="h-safety">Safety</h2>
+      <div class="row row--stack">
+        <label class="row__label" for="maxReloadsPerHour">Most page loads per hour</label>
+        <div class="range"><input id="maxReloadsPerHour" type="range" min="6" max="40" step="1"><output id="maxReloadsPerHour-out" for="maxReloadsPerHour"></output></div>
+        <p id="safety-text" class="hint"></p>
+      </div>
+      <p class="subtle">This extension only reads the public jobs page. It never applies, never signs in, never touches your account, and sends nothing anywhere.</p>
+    </section>
+
+    <!-- 5. Activity log -->
+    <section class="card" aria-labelledby="h-log">
+      <h2 id="h-log">Activity</h2>
+      <p id="log-summary" class="hint"></p>
+      <div class="table-wrap">
+        <table class="log">
+          <thead><tr><th scope="col">Time</th><th scope="col">Result</th><th scope="col">Source</th><th scope="col">Details</th></tr></thead>
+          <tbody id="log-body"></tbody>
+        </table>
+      </div>
+      <div class="row row--buttons">
+        <button id="copy-log" class="btn" type="button">Copy log</button>
+        <button id="clear-log" class="btn" type="button">Clear log</button>
+        <label class="check"><input id="debug" type="checkbox"> Debug mode <span class="subtle">(extra console output)</span></label>
+      </div>
+    </section>
+
+    <!-- 6. Danger zone -->
+    <section class="card card--danger" aria-labelledby="h-danger">
+      <h2 id="h-danger">Reset</h2>
+      <div class="row row--buttons">
+        <button id="clear-seen" class="btn btn--danger" type="button">Clear alert history</button>
+        <button id="reset" class="btn btn--danger" type="button">Reset all settings</button>
+      </div>
+      <p class="hint">Clearing alert history can make jobs that are still recent alert once more.</p>
+    </section>
+  </main>
 </body>
 </html>

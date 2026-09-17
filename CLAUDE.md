@@ -70,6 +70,8 @@ Rules 3, 4, 5, 10 and the manifest checks are enforced by `tests/purity.test.js`
 - `npm test` runs all unit tests (`node --test "tests/**/*.test.js"`)
 - `npm run coverage` enforces 100% lines on `src/core/**`
 - `npm run icons` / `npm run sounds` regenerate assets (commit the output)
+- `npm run e2e` real Chrome (throwaway profile, live site) end-to-end check
+- `npm run build` tests + `dist/pph-job-radar-<version>.zip`
 - Load unpacked: `chrome://extensions` -> Developer mode -> Load unpacked -> `E:\PPH-Extention\src`
 - After changes: reload arrow on the extension card, then reload the monitor tab
 
@@ -82,14 +84,15 @@ Do not move on until the phase acceptance criteria pass and results are in `docs
 Stop and report at the end of each phase.
 
 ```
-Phase 0  scaffold                 <- start here
-Phase 1  parser + tests + live cross check
-Phase 2  scheduler + live timing
-Phase 3  alerting (notification + sound)
-Phase 4  popup (interval presets)
-Phase 5  options
-Phase 6  hardening
+Phase 0  scaffold                 done v0.0.1
+Phase 1  parser + tests + live cross check   done v0.1.0
+Phase 2  scheduler + live timing  done v0.2.0
+Phase 3  alerting (notification + sound)  done v0.3.0
+Phase 4-6 popup, options, hardening, release build  done v1.0.0
 ```
+
+From v1.0.0 on: every change must keep `npm test`, `npm run coverage` and `npm run e2e` green
+before it is merged. `npm run e2e` is the only proof the extension works in real Chrome.
 
 Never invent a "real" fixture. Ask me to run `tools/capture-fixture.js` in DevTools.
 

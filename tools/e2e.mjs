@@ -7,7 +7,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launchChrome, evaluate, sleep } from './cdp.mjs';
 
-const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src');
+const SRC = process.env.E2E_EXTENSION_PATH ?? resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 const headed = process.argv.includes('--headed');
 const skipAlerts = process.argv.includes('--skip-alerts');
 
@@ -110,6 +110,26 @@ async function main() {
   const after10 = await alarm('tick');
   check('switching to every 10 min moves it out', Math.abs(after10 - (firstOk.stats.lastRunMs + 10 * 60_000)) < 3000,
     `${Math.round((after10 - Date.now()) / 1000)} s from now`);
+
+  // ---- the popup and options UI drive the same settings ----
+  const popupTarget = await cdp.send('Target.createTarget', { url: `chrome-extension://${extensionId}/ui/popup.html` });
+  const { sessionId: popup } = await cdp.send('Target.attachToTarget', { targetId: popupTarget.targetId, flatten: true });
+  await sleep(1500);
+  const popupView = await evaluate(cdp, popup, `({ label: document.getElementById('status-label').textContent,
+    cards: document.querySelectorAll('.card').length, countdown: document.getElementById('countdown').textContent })`);
+  check('popup shows status, countdown and real jobs', popupView.cards === 5 && /next check in \d+:\d\d/.test(popupView.countdown),
+    JSON.stringify(popupView));
+  await evaluate(cdp, popup, `[...document.querySelectorAll('#presets [role=radio]')].find(b => b.textContent === '3 min').click()`);
+  await sleep(1200);
+  const viaPopup = (await state()).settings;
+  const checked = await evaluate(cdp, popup, `document.querySelector('#presets [aria-checked=true]')?.textContent`);
+  check('popup "3 min" button switches the interval', viaPopup.intervalMode === 'fixed' && viaPopup.minIntervalMin === 3 && checked === '3 min', checked);
+  await cdp.send('Target.closeTarget', { targetId: popupTarget.targetId });
+
+  await run(`(() => { const v = document.getElementById('sound-volume'); v.value = '0.35'; v.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+  await sleep(1500);
+  check('options page autosaves a change', (await state()).settings.sound.volume === 0.35);
+  await message({ type: 'APPLY_PRESET', preset: 'every10' });
 
   // ---- other tabs untouched ----
   const other = await cdp.send('Target.createTarget', { url: 'https://www.peopleperhour.com/freelance-jobs', background: true });

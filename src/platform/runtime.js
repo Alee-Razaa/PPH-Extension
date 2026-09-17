@@ -42,6 +42,15 @@ export function onWorkerMessage(type, handler) {
   };
 }
 
+export async function openOptionsPage() {
+  try {
+    await chrome.runtime.openOptionsPage();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function getURL(path) {
   try {
     return chrome.runtime.getURL(path);
