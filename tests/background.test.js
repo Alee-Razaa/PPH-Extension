@@ -131,7 +131,7 @@ test('JOBS from the monitor tab completes the cycle and anchors the next check o
   assert.deepEqual(stray, { ok: false, ignored: true }, 'other tabs are ignored');
   assert.ok(session(fake, 'cycleLock'), 'lock untouched by the stray message');
 
-  assert.deepEqual(await send(fake, { type: 'JOBS', result: goodResult(Date.now()) }, pageSender(monitor)), { ok: true });
+  assert.deepEqual(await send(fake, { type: 'JOBS', result: goodResult(Date.now()) }, pageSender(monitor)), { ok: true, fresh: 2 });
   assert.equal(session(fake, 'cycleLock'), undefined);
   assert.equal(fake.alarms.has('watchdog'), false);
   const s = stats(fake);
@@ -142,7 +142,7 @@ test('JOBS from the monitor tab completes the cycle and anchors the next check o
   assert.equal(local(fake, 'log')[0].source, 'state');
   assert.equal(alarmAt(fake, 'tick'), T0 + 5 * MIN, 'random 5-10 with rand 0, from cycle start not cycle end');
   assert.equal(s.nextRunMs, T0 + 5 * MIN);
-  assert.equal(fake.badge.text, '');
+  assert.equal(fake.badge.text, '2', 'badge shows the two new jobs found');
 });
 
 test('the worker re-validates JOBS and maps page failure reasons', async (t) => {
@@ -406,4 +406,144 @@ test('GET_STATUS summarises state for the popup', async (t) => {
   assert.equal(status.monitorTabId, null);
   assert.equal(status.msToNext, 30 * SEC);
   assert.deepEqual(status.lastJobs, []);
+});
+
+// ------------------------------------------------------------------ alerts (Phase 3)
+
+async function completeCycle(fake, t, result) {
+  await fireAlarm(fake, 'tick');
+  const monitor = session(fake, 'monitorTabId');
+  t.mock.timers.tick(22 * SEC);
+  const reply = await send(fake, { type: 'JOBS', result: result ?? goodResult(Date.now()) }, pageSender(monitor));
+  return { monitor, reply };
+}
+
+test('new jobs raise notifications and exactly one sound; the same jobs never alert twice (tests 8, 9)', async (t) => {
+  const fake = await startWorker(t);
+  const { reply } = await completeCycle(fake, t);
+  assert.deepEqual(reply, { ok: true, fresh: 2 }, 'jobs 4 and 11 min old are inside the 12 min window');
+  assert.deepEqual([...fake.notifications.keys()], ['pph-4521929', 'pph-4521928']);
+  const first = fake.notifications.get('pph-4521929');
+  assert.equal(first.title, 'Job 4521929');
+  assert.match(first.message, /^£88 fixed · 8 proposals · posted 4 min ago$/);
+  assert.equal(first.silent, true);
+  assert.equal(first.requireInteraction, true);
+  assert.match(first.iconUrl, /icons\/notif-128\.png$/);
+  assert.deepEqual(fake.sounds, [{ file: 'sounds/chime.wav', volume: 0.8 }]);
+  assert.deepEqual(fake.calls.filter(c => c[0] === 'offscreen'), [['offscreen', ['AUDIO_PLAYBACK']]]);
+  assert.equal(stats(fake).totalAlerts, 2);
+  assert.equal(stats(fake).unreadAlerts, 2);
+  assert.equal(fake.badge.text, '2');
+  assert.equal(Object.keys(local(fake, 'seen')).length, 5, 'all top 5 are remembered, not just the alerted ones');
+  assert.match(local(fake, 'log')[0].note, /2 new, sound/);
+
+  fake.notifications.clear();
+  t.mock.timers.setTime(alarmAt(fake, 'tick'));
+  const again = await completeCycle(fake, t);
+  assert.deepEqual(again.reply, { ok: true, fresh: 0 });
+  assert.equal(fake.notifications.size, 0, 'no repeat notifications');
+  assert.equal(fake.sounds.length, 1, 'no repeat sound');
+});
+
+test('five new jobs give the capped notifications, one summary and one sound (test 8)', async (t) => {
+  const fake = await startWorker(t);
+  await send(fake, { type: 'SAVE_SETTINGS', patch: { freshWindowMin: 60 } });
+  await completeCycle(fake, t);
+  const ids = [...fake.notifications.keys()];
+  assert.equal(ids.length, 4);
+  assert.deepEqual(ids.slice(0, 3), ['pph-4521929', 'pph-4521928', 'pph-4521927']);
+  assert.match(ids[3], /^pph-summary-/);
+  assert.equal(fake.notifications.get(ids[3]).title, '2 more new jobs');
+  assert.equal(fake.sounds.length, 1);
+});
+
+test('filters, mute and the loud sound for high budgets', async (t) => {
+  const fake = await startWorker(t);
+  await send(fake, { type: 'SAVE_SETTINGS', patch: { sound: { highValueBudget: 50 }, filters: { keywordsExclude: ['4521928'] } } });
+  await completeCycle(fake, t);
+  assert.deepEqual([...fake.notifications.keys()], ['pph-4521929'], 'excluded keyword filtered out');
+  assert.deepEqual(fake.sounds, [{ file: 'sounds/alarm.wav', volume: 0.8 }], 'budget 88 >= 50 plays the loud sound');
+
+  const muted = await startWorker(t, { timers: false });
+  await send(muted, { type: 'SAVE_SETTINGS', patch: { sound: { enabled: false } } });
+  await completeCycle(muted, t);
+  assert.equal(muted.notifications.size, 2);
+  assert.equal(muted.sounds.length, 0);
+});
+
+test('clicking a job notification opens that job; the summary focuses the monitor tab', async (t) => {
+  const fake = await startWorker(t);
+  await send(fake, { type: 'SAVE_SETTINGS', patch: { freshWindowMin: 60, maxNotificationsPerCycle: 1 } });
+  const { monitor } = await completeCycle(fake, t);
+  fake.emit('notifications.onClicked', 'pph-4521929');
+  await flush();
+  const opened = fake.calls.filter(c => c[0] === 'create' && c[2] !== 'about:blank');
+  assert.deepEqual(opened.map(c => c[2]),
+    ['https://www.peopleperhour.com/freelance-jobs/technology-programming/website-development/i-need-a-sample-website-4521929']);
+  assert.equal(fake.notifications.has('pph-4521929'), false, 'clicked notification is cleared');
+
+  const summaryId = [...fake.notifications.keys()].find(id => id.startsWith('pph-summary-'));
+  fake.emit('notifications.onClicked', summaryId);
+  await flush();
+  assert.equal(fake.calls.filter(c => c[0] === 'create').length, 2, 'summary opens nothing new');
+  assert.ok(fake.calls.some(c => c[0] === 'update' && c[1] === monitor && c[2].active === true), 'monitor tab focused');
+
+  fake.emit('notifications.onClicked', 'another-extension-notification');
+  await flush();
+  assert.equal(fake.calls.filter(c => c[0] === 'create').length, 2);
+});
+
+test('a job with an unsafe url still alerts but never opens that url', async (t) => {
+  const fake = await startWorker(t);
+  const result = goodResult(T0 + 22 * SEC);
+  result.jobs[0] = { ...result.jobs[0], url: 'https://evil.example/phish' };
+  await completeCycle(fake, t, result);
+  assert.ok(fake.notifications.has('pph-4521929'));
+  fake.emit('notifications.onClicked', 'pph-4521929');
+  await flush();
+  assert.equal(fake.calls.some(c => c[0] === 'create' && String(c[2]).includes('evil')), false);
+});
+
+test('two unreadable pages in a row raise one layout notice; BLOCKED raises one blocked notice', async (t) => {
+  const fake = await startWorker(t);
+  await completeCycle(fake, t, { ok: false, reason: 'PARSE_FAILED' });
+  assert.equal(fake.notifications.has('pph-layout'), false, 'one failure is not worth a notification');
+  t.mock.timers.setTime(alarmAt(fake, 'tick'));
+  await completeCycle(fake, t, { ok: false, reason: 'NO_CARDS' });
+  assert.equal(fake.notifications.has('pph-layout'), true);
+
+  t.mock.timers.setTime(alarmAt(fake, 'tick'));
+  await completeCycle(fake, t, { ok: false, reason: 'BLOCKED' });
+  assert.equal(fake.notifications.get('pph-blocked').requireInteraction, true);
+});
+
+test('Test notification, Test sound, clear unread, clear seen, reset settings', async (t) => {
+  const fake = await startWorker(t);
+  assert.deepEqual(await send(fake, { type: 'TEST_NOTIFICATION' }), { ok: true });
+  assert.ok(fake.notifications.has('pph-test'));
+  assert.deepEqual(await send(fake, { type: 'TEST_SOUND', file: 'sounds/ping.wav', volume: 0.3 }), { ok: true });
+  assert.deepEqual(await send(fake, { type: 'TEST_SOUND', file: 'https://evil.example/x.mp3', volume: 7 }), { ok: true });
+  assert.deepEqual(fake.sounds, [{ file: 'sounds/ping.wav', volume: 0.3 }, { file: 'sounds/chime.wav', volume: 1 }],
+    'unknown files fall back to the chosen sound, volume is clamped');
+
+  await completeCycle(fake, t);
+  assert.equal(fake.badge.text, '2');
+  await send(fake, { type: 'CLEAR_UNREAD' });
+  assert.equal(stats(fake).unreadAlerts, 0);
+  assert.equal(fake.badge.text, '');
+  await send(fake, { type: 'CLEAR_SEEN' });
+  assert.deepEqual(local(fake, 'seen'), {});
+
+  await send(fake, { type: 'APPLY_PRESET', preset: 'every3' });
+  const reset = await send(fake, { type: 'RESET_SETTINGS' });
+  assert.deepEqual(reset.settings, clampSettings(DEFAULTS));
+});
+
+test('a sound that fails to play never breaks the cycle', async (t) => {
+  const fake = await startWorker(t, { fake: createFakeChrome({ soundReply: { ok: false, error: 'NotAllowedError' } }) });
+  t.mock.method(console, 'warn', () => {});
+  const { reply } = await completeCycle(fake, t);
+  assert.deepEqual(reply, { ok: true, fresh: 2 });
+  assert.equal(stats(fake).status, 'OK');
+  assert.ok(alarmAt(fake, 'tick'));
 });

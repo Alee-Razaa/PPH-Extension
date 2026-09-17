@@ -156,6 +156,12 @@ test('manifest: every referenced file exists', () => {
   for (const p of paths) assert.ok(existsSync(join(SRC, p)), `manifest references missing file: ${p}`);
 });
 
+test('every allow-listed sound, the notification icon and the offscreen page exist', async () => {
+  const { SOUND_FILES } = await import('../src/core/constants.js');
+  for (const p of [...SOUND_FILES, 'icons/notif-128.png', 'offscreen/offscreen.html', 'offscreen/offscreen.js'])
+    assert.ok(existsSync(join(SRC, p)), `missing: ${p}`);
+});
+
 test('content script import graph is web accessible and resolves', () => {
   const globs = (manifest.web_accessible_resources ?? []).flatMap(w => w.resources).map(globToRe);
   const seen = new Set();

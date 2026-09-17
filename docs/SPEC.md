@@ -1769,7 +1769,7 @@ Backoff ladder wiring, DOM fallback wiring, blocked detection, hourly cap, pruni
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| Job listed late: reaches the top of the list minutes after its `posted_dt`, so it may already be outside the fresh window at first sight | Medium | High | Seen live in Phase 1. Decide in Phase 3: also alert on an unseen job whose id is higher than every id seen so far (after the first cycle), regardless of age |
+| Job listed late: reaches the top of the list minutes after its `posted_dt`, so it may already be outside the fresh window at first sight | Medium | High | Seen live in Phase 1. **Implemented in Phase 3** (`pickFresh` in `core/select.js`): an unseen job also alerts when its id is higher than every id seen so far and it is under `LATE_LISTING_MAX_MIN` (60) minutes old. Not applied on the very first cycle (no baseline) |
 | PPH changes the inline state script shape | Medium | High | DOM fallback, sanity gates, `PARSE_FAILED` notification after two failures |
 | PPH changes CSS module hashes | High (every deploy) | Low | Prefix matching only. Already handled |
 | PPH adds a bot check on repeated loads | Low at this rate | High | Jitter, hourly cap, `BLOCKED` detection that stops instead of retrying |

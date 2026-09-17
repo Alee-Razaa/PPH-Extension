@@ -52,6 +52,16 @@ export async function reloadTo(tabId, url) {
   }
 }
 
+/** Open a URL in a new foreground tab. Callers validate the URL first. */
+export async function openUrl(url) {
+  try {
+    const tab = await chrome.tabs.create({ url, active: true });
+    return typeof tab?.id === 'number' ? tab.id : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function focus(tabId) {
   try {
     const tab = await chrome.tabs.update(tabId, { active: true });

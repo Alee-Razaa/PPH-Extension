@@ -1,12 +1,14 @@
 // Service worker (type: module). Wiring only: facts come from platform/, decisions from core/.
 // SPEC 4.2 (inverted cycle), 4.4 (timing), 8 (cycle), 10 (messages), 11 (errors), 26 (skeleton).
-import { LIMITS, MSG, STATUS, ALARM, BASE_URL } from './core/constants.js';
+import { LIMITS, MSG, STATUS, ALARM, BASE_URL, SOUND_FILES } from './core/constants.js';
 import { mergeSettings, clampSettings, timingChanged, applyPreset, presetOf } from './core/settings.js';
 import { nextDelayMin, nextRunAt, reloadCap, effectiveFreshMin, loadsPerHour, ALARM_FLOOR_MS } from './core/schedule.js';
 import {
   decidePrecheck, isCycleSender, statusForReason, withOutcome, senderAllowed, cleanFailures
 } from './core/cycle.js';
-import { sanitizeJob, checkGates } from './core/validate.js';
+import { sanitizeJob, checkGates, isPphUrl } from './core/validate.js';
+import { pickFresh, markSeen, pruneSeen } from './core/select.js';
+import { planAlerts, SYSTEM_NOTICES } from './core/alerts.js';
 import { formatAge } from './core/time.js';
 import * as on from './platform/events.js';
 import * as store from './platform/storage.js';
@@ -15,6 +17,8 @@ import * as tabs from './platform/tabs.js';
 import * as idle from './platform/idle.js';
 import { getURL } from './platform/runtime.js';
 import { paint } from './platform/badge.js';
+import * as notifications from './platform/notifications.js';
+import { playSound } from './platform/offscreen.js';
 
 const JOBS_TAB_PATTERN = `${BASE_URL}*`;
 const FORCE_MIN_GAP_MS = 30_000;
@@ -47,7 +51,12 @@ const HANDLERS = guard({
   [MSG.SAVE_SETTINGS]: ({ patch }) => serial(() => saveSettings(s => mergeSettings(s, patch))),
   [MSG.RESUME_FROM_BLOCK]: () => serial(resumeFromBlock),
   [MSG.OPEN_MONITOR_TAB]: () => serial(openMonitorTab),
-  [MSG.CLEAR_LOG]: () => serial(async () => ({ ok: await store.setLocal({ log: [] }) }))
+  [MSG.CLEAR_LOG]: () => serial(async () => ({ ok: await store.setLocal({ log: [] }) })),
+  [MSG.CLEAR_SEEN]: () => serial(async () => ({ ok: await store.setLocal({ seen: {} }) })),
+  [MSG.CLEAR_UNREAD]: () => serial(clearUnread),
+  [MSG.RESET_SETTINGS]: () => serial(() => saveSettings(() => ({}))),
+  [MSG.TEST_NOTIFICATION]: () => serial(testNotification),
+  [MSG.TEST_SOUND]: msg => serial(() => testSound(msg))
 });
 
 // ---- listeners registered SYNCHRONOUSLY at top level (SPEC 20) ----
@@ -57,6 +66,7 @@ on.alarm(onAlarm);
 on.message(HANDLERS);
 on.tabRemoved(tabId => serial(() => onTabRemoved(tabId)));
 on.storageChanged(onStorageChanged);
+on.notificationClicked(id => serial(() => onNotificationClicked(id)));
 
 // ---------------------------------------------------------------- lifecycle
 
@@ -204,19 +214,33 @@ async function onJobs({ result }, sender) {
   const gate = checkGates(jobs, serverTimeMs, now, settings.topN);
   if (!gate.ok) return failCycle(STATUS.PARSE_FAILED, [`worker:${gate.error}`, ...cleanFailures(result.failures)]);
 
+  const { seen = {} } = await store.getLocal(['seen']);
+  const { fresh, overflow } = pickFresh(jobs, serverTimeMs, settings, seen);
+  const plan = planAlerts(fresh, settings, serverTimeMs);
+
   const newestAgeMs = Math.min(...jobs.map(j => serverTimeMs - j.postedMs));
+  const parts = [`read ${jobs.length}, newest ${formatAge(newestAgeMs)} old`, `${fresh.length} new`];
+  if (plan.sound) parts.push(plan.highValue ? 'loud sound' : 'sound');
+  if (overflow) parts.push('OVERFLOW');
   const outcome = withOutcome(stats, log, {
     status: STATUS.OK,
     nowMs: now,
     source: result.source === 'dom' ? 'dom' : 'state',
-    note: `read ${jobs.length}, newest ${formatAge(newestAgeMs)} old`,
+    note: parts.join(', '),
     failures: result.failures
   });
-  await store.setLocal({ ...outcome, lastJobs: jobs });
+  outcome.stats.totalAlerts = (Number(stats.totalAlerts) || 0) + fresh.length;
+  outcome.stats.unreadAlerts = (Number(stats.unreadAlerts) || 0) + fresh.length;
+  outcome.stats.overflow = overflow;
+  if (fresh.length) outcome.stats.lastAlertMs = now;
+
+  // Remember the jobs before alerting: if the worker dies mid-alert, a job must never alert twice.
+  await store.setLocal({ ...outcome, lastJobs: jobs, seen: pruneSeen(markSeen(seen, jobs, now), now) });
   await store.removeSession('cycleLock');
-  await paint(STATUS.OK, outcome.stats.unreadAlerts ?? 0);
+  await deliverAlerts(plan, settings);
+  await paint(STATUS.OK, outcome.stats.unreadAlerts);
   await scheduleNext(settings, 0, cycleLock.startedMs);
-  return { ok: true };
+  return { ok: true, fresh: fresh.length };
 }
 
 async function failCycle(status, failures) {
@@ -229,6 +253,12 @@ async function failCycle(status, failures) {
   const outcome = withOutcome(stats, log, { status, nowMs: now, note: 'cycle failed', failures });
   await store.setLocal(outcome);
   await paint(status);
+  if (status === STATUS.PARSE_FAILED && outcome.stats.consecutiveParseFailures === 2) {
+    await notifications.show(SYSTEM_NOTICES.layout.id, SYSTEM_NOTICES.layout);
+  }
+  if (status === STATUS.BLOCKED && stats.status !== STATUS.BLOCKED) {
+    await notifications.show(SYSTEM_NOTICES.blocked.id, { ...SYSTEM_NOTICES.blocked, requireInteraction: true });
+  }
 
   if (status === STATUS.BLOCKED) {                   // never keep reloading after BLOCKED (SPEC 11.5)
     await alarms.clear(ALARM.TICK);
@@ -311,6 +341,56 @@ async function resumeFromBlock() {
   await paint(STATUS.IDLE);
   const nextRunMs = settings.enabled ? await scheduleNext(settings, 0, 0) : null;
   return { ok: true, nextRunMs };
+}
+
+// ---------------------------------------------------------------- alerts (SPEC 15)
+
+async function deliverAlerts(plan, settings) {
+  if (!plan.notifications.length && !plan.summary) return;
+  const { notifTargets = {} } = await store.getSession(['notifTargets']);
+  const targets = { ...notifTargets };
+  for (const n of plan.notifications) {
+    if (await notifications.show(n.id, { ...n, requireInteraction: settings.requireInteraction })) targets[n.id] = n.url;
+  }
+  if (plan.summary && await notifications.show(plan.summary.id, { ...plan.summary, requireInteraction: settings.requireInteraction })) {
+    targets[plan.summary.id] = null;
+  }
+  const kept = Object.entries(targets).slice(-LIMITS.NOTIFICATION_TARGETS_MAX);
+  await store.setSession({ notifTargets: Object.fromEntries(kept) });
+  if (plan.sound) {
+    const played = await playSound(plan.sound.file, plan.sound.volume);
+    if (!played.ok) console.warn('[PPH Job Radar] alert sound did not play:', played.error);
+  }
+}
+
+async function onNotificationClicked(id) {
+  if (typeof id !== 'string' || !id.startsWith('pph-')) return;
+  const { notifTargets = {} } = await store.getSession(['notifTargets']);
+  await notifications.clear(id);
+  const url = notifTargets[id];
+  if (isPphUrl(url)) await tabs.openUrl(url);            // only ever open PeoplePerHour job pages
+  else await openMonitorTab();
+  const { [id]: _clicked, ...rest } = notifTargets;
+  await store.setSession({ notifTargets: rest });
+}
+
+async function clearUnread() {
+  const { stats } = await readState();
+  await patchStats({ unreadAlerts: 0 });
+  await paint(stats.status ?? STATUS.IDLE, 0);
+  return { ok: true };
+}
+
+async function testNotification() {
+  const ok = await notifications.show(SYSTEM_NOTICES.test.id, SYSTEM_NOTICES.test);
+  return { ok };
+}
+
+async function testSound({ file, volume } = {}) {
+  const { settings } = await readState();
+  const chosen = SOUND_FILES.includes(file) ? file : settings.sound.file;
+  const level = Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : settings.sound.volume;
+  return playSound(chosen, level);
 }
 
 async function openMonitorTab() {

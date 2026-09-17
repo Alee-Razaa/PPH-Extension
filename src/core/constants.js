@@ -121,7 +121,9 @@ export const LIMITS = deepFreeze({
   URL_MAX: 500,
   BUDGET_MAX: 10_000_000,
   PROPOSALS_MAX: 10_000,
-  CROSS_CHECK_CARDS: 20
+  CROSS_CHECK_CARDS: 20,
+  LATE_LISTING_MAX_MIN: 60,
+  NOTIFICATION_TARGETS_MAX: 30
 });
 
 /** Prefix matching only: CSS module hashes change on every deploy (CLAUDE.md rule 8). */
@@ -149,7 +151,7 @@ export const GATE = enumOf(
 export const MSG = enumOf(
   'HELLO', 'JOBS', 'NET_BACK', 'PING', 'PLAY_SOUND', 'GET_STATUS', 'FORCE_CHECK', 'SET_ENABLED',
   'APPLY_PRESET', 'SAVE_SETTINGS', 'RESUME_FROM_BLOCK', 'OPEN_MONITOR_TAB', 'TEST_SOUND',
-  'TEST_NOTIFICATION', 'CLEAR_LOG', 'CLEAR_SEEN', 'RESET_SETTINGS'
+  'TEST_NOTIFICATION', 'CLEAR_LOG', 'CLEAR_SEEN', 'RESET_SETTINGS', 'CLEAR_UNREAD'
 );
 
 export const ALARM = deepFreeze({ TICK: 'tick', WATCHDOG: 'watchdog' });

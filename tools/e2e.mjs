@@ -41,7 +41,7 @@ async function main() {
     // Errors inside extension contexts always count. On PeoplePerHour pages only ours count:
     // the site throws its own React hydration errors, which are not ours to fix.
     const inExtension = message.sessionId && extensionSessions.has(message.sessionId);
-    const ours = text => inExtension || /PPH Job Radar|chrome-extension:///.test(text);
+    const ours = text => inExtension || text.includes('PPH Job Radar') || text.includes('chrome-extension://');
     if (message.method === 'Runtime.exceptionThrown') {
       const d = message.params.exceptionDetails;
       const text = `${d.exception?.description ?? d.text} ${d.url ?? ''}`;

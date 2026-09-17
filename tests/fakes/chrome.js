@@ -7,13 +7,16 @@ export const EXTENSION_BASE = `chrome-extension://${EXTENSION_ID}/`;
 
 const clone = v => (v === undefined ? undefined : structuredClone(v));
 
-export function createFakeChrome({ ping = { online: true, ready: true }, idleState = 'active' } = {}) {
+export function createFakeChrome({ ping = { online: true, ready: true }, idleState = 'active', soundReply = { ok: true } } = {}) {
   const listeners = new Map();
   const calls = [];
   const areas = { local: new Map(), session: new Map() };
   const alarms = new Map();
   const tabs = new Map();
   const badge = { text: '', color: '' };
+  const notifications = new Map();
+  const sounds = [];
+  let offscreenOpen = false;
   let nextTabId = 500;
 
   const event = name => ({
@@ -49,7 +52,18 @@ export function createFakeChrome({ ping = { online: true, ready: true }, idleSta
       onInstalled: event('runtime.onInstalled'),
       onStartup: event('runtime.onStartup'),
       onMessage: event('runtime.onMessage'),
-      sendMessage: async () => { throw new Error('Could not establish connection. Receiving end does not exist.'); }
+      sendMessage: async msg => {
+        if (msg?.type === 'PLAY_SOUND' && offscreenOpen) { sounds.push({ file: msg.file, volume: msg.volume }); return clone(soundReply); }
+        throw new Error('Could not establish connection. Receiving end does not exist.');
+      },
+      getContexts: async () => (offscreenOpen ? [{ contextType: 'OFFSCREEN_DOCUMENT' }] : [])
+    },
+    offscreen: {
+      async createDocument({ reasons }) {
+        if (offscreenOpen) throw new Error('Only a single offscreen document may be created.');
+        calls.push(['offscreen', reasons]);
+        offscreenOpen = true;
+      }
     },
     storage: { local: area('local'), session: area('session'), onChanged: event('storage.onChanged') },
     alarms: {
@@ -99,7 +113,16 @@ export function createFakeChrome({ ping = { online: true, ready: true }, idleSta
       async setBadgeText({ text }) { badge.text = text; },
       async setBadgeBackgroundColor({ color }) { badge.color = color; }
     },
-    notifications: { onClicked: event('notifications.onClicked') }
+    notifications: {
+      async create(id, options) {
+        for (const key of ['type', 'iconUrl', 'title', 'message']) if (!options[key]) throw new Error('Missing ' + key);
+        notifications.set(id, clone(options));
+        return id;
+      },
+      async clear(id) { return notifications.delete(id); },
+      async getAll() { return Object.fromEntries([...notifications.keys()].map(k => [k, true])); },
+      onClicked: event('notifications.onClicked')
+    }
   };
 
   /** Open a tab directly, as the user would. */
@@ -125,7 +148,7 @@ export function createFakeChrome({ ping = { online: true, ready: true }, idleSta
     });
   }
 
-  return { api, areas, alarms, tabs, calls, badge, emit, openTab, closeTab, sendRuntime, listeners };
+  return { api, areas, alarms, tabs, calls, badge, notifications, sounds, emit, openTab, closeTab, sendRuntime, listeners };
 }
 
 /** Let queued promise chains and immediate timers run. */

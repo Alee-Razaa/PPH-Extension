@@ -20,14 +20,15 @@ export async function sendToWorker(msg, timeoutMs = 3000) {
 }
 
 /**
- * Answer one message type (from the worker to this context). Returns an unsubscribe function.
- * The handler's resolved value is the reply. A throw or rejection replies null.
+ * Answer one message type sent by this extension. Returns an unsubscribe function.
+ * The handler gets (msg, sender); its resolved value is the reply. A throw or rejection replies null.
  */
 export function onWorkerMessage(type, handler) {
-  const listener = (msg, _sender, sendResponse) => {
+  const listener = (msg, sender, sendResponse) => {
     if (msg?.type !== type) return false;
+    if (sender?.id !== chrome.runtime.id) return false;
     Promise.resolve()
-      .then(() => handler(msg))
+      .then(() => handler(msg, sender))
       .then(sendResponse, () => sendResponse(null));
     return true;
   };

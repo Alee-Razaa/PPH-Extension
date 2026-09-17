@@ -4,6 +4,8 @@ Manual and integration results per phase (SPEC 23 step 5). Newest first.
 
 | Date | Phase | Test | Chrome version | Result | Notes |
 |---|---|---|---|---|---|
+| 2026-09-17 | 3 | Real Chrome e2e with alerts (`tools/e2e.mjs`) | 153.0.8010.47 | pass | 19/19 functional: 2 real new jobs -> 2 notifications + 1 sound via offscreen; second check 0 repeats; Test notification + Test sound OK. Extension-error check fixed in the tool (regex bug) |
+| 2026-09-17 | 3 | `npm test` + `npm run coverage` | n/a | pass | 122 pass (8 new worker alert tests). `src/core` 100% lines, branches, functions |
 | 2026-09-17 | 2 | Real Chrome e2e (`tools/e2e.mjs`, throwaway profile, live site) | 153.0.8010.47 | pass | 11/11 functional checks: auto first check OK in 57 s, one pinned tab, 5 real jobs, next check 7.24 min, 3-min and 10-min switches applied instantly, user tab untouched |
 | 2026-09-17 | 2 | Real Chrome bug found and fixed | 153.0.8010.47 | fixed | `use_dynamic_url: true` broke the content module imports (every cycle UNRESPONSIVE). Set to false, U10 guards it, SPEC 6 updated |
 | 2026-09-17 | 2 | Mutation check on worker tests | n/a | pass | Removing live re-arm fails 2 tests; reintroducing the R11 bug fails test 30 |
